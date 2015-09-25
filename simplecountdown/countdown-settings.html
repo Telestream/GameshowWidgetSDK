@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+  <head>
+	<title>Countdown - settings</title>
+	<link rel="stylesheet" href="css/countdown-settings.css">
+	<script type="text/javascript" src="scripts/countdown-settings.js"></script>
+  </head>
+
+  <body onload="settings_ui_update_controls();">
+
+	<div class="settings-row">
+	  <div class="setting-name inline">Start</div><!--
+   --><div class="setting-value inline"><!--
+     --><input type="number"
+			   id="start_seconds"
+			   min="1" max="100" step="1" value="10"
+			   oninput="SaveSettingsAndNotifyHostApp()">&nbsp;seconds<!--
+   --></div><!--
+ --></div>
+
+	<div class="settings-row">
+	  <div class="setting-name inline">Stop</div><!--
+   --><div class="setting-value inline"><!--
+     --><input type="number"
+			   id="stop_seconds"
+			   min="0" max="100" step="1" value="1"
+			   oninput="SaveSettingsAndNotifyHostApp()">&nbsp;seconds<!--
+   --></div><!--
+ --></div>
+
+	<div class="settings-row">
+	  <div class="setting-name inline">Delay</div><!--
+   --><div class="setting-value inline"><!--
+     --><input type="number"
+			   id="delay_seconds"
+			   min="1" max="100" step="1" value="1"
+			   oninput="SaveSettingsAndNotifyHostApp()">&nbsp;seconds<!--
+   --></div><!--
+ --></div>
+
+  </body>
+</html>

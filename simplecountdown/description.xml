@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<widget name="simplecountdown"
+		display_name="Countdown"
+		version="1.0.0"
+		creator="Telestream"
+		authentication_type=""
+		min_width="128"
+		min_height="128" 
+		settings_page="countdown-settings.html"
+		start_page="countdown.html"
+		settings_height="200"
+		api_version="1">
+</widget>

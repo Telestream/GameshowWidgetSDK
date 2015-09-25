@@ -1,0 +1,87 @@
+body {
+	overflow: hidden;
+}
+
+.settings-row {
+	height: 23px;
+	margin-top: 0.6em;
+	margin-bottom: 0.6em;
+}
+
+.setting-name {
+	text-align: right;
+	width: 7em;
+	height: auto;
+	display: inline-block;
+	margin-right: 10px;
+}
+
+.setting-name-long {
+	width: 8em;
+}
+
+.setting-name-short {
+	width: 3em;
+}
+
+.setting-value {
+	width: 11em;
+	height: auto;
+}
+
+.setting-value-short {
+	width: 7.3em;
+	height: auto;
+}
+
+.setting-value-shorter {
+	width: 3.2em;
+	height: auto;
+}
+
+.vpad-small {
+	padding-top: 2px;
+	padding-bottom: 2px;
+}
+
+.no-padding {
+	padding: 0px;
+}
+
+.no-border {
+	border: 0px;
+}
+
+.no-margin {
+	margin: 0px;
+}
+
+.valign-center {
+	vertical-align: middle;
+}
+
+.halign-right {
+	float: right;
+}
+
+.logo {
+	width: 1.6em;
+}
+
+.inline {
+	display: inline-block;
+}
+
+.gap {
+	display: inline-block;
+	width: 0.5em;
+}
+
+.setting-value-frame {
+	border-width: 1px;
+	border-style: solid;
+	border-color: #747579;
+	-webkit-border-radius: 4px;
+	border-radius: 4px;
+	padding: 2px;
+}

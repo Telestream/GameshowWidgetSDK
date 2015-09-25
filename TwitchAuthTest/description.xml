@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<widget name="TwitchAuthTest"
+		display_name="Twitch OAuth Test"
+		version="1.0.0"
+		creator="Telestream"
+		authentication_type="Twitch"
+		min_width="640"
+		min_height ="480"
+		settings_page="auth-settings.html"
+		start_page="auth.html"
+		settings_height="150"
+		api_version="1">
+</widget>
