@@ -57,6 +57,14 @@ function SaveSettingsAndNotifyHostApp()
 	push_settings_to_renderer();
 }
 
+// called by Gameshow to retrieve settings.
+// settings can be any javascript object, which Gameshow will serialize as JSON
+// and save in document so it can persist between application sessions
+function GetWidgetSettings() {
+    return gWidgetSettings;
+}
+
+
 // This will be called by the host app *Gameshow* to restore setting values.
 // appInfo may include oauth_access_token and twitch_channel_name, if the host
 // app *Gameshow* was authorized by the user to access Twitch.

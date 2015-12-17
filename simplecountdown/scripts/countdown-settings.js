@@ -1,7 +1,8 @@
 var gWidgetSettings = {
 	startSeconds: "10",
 	stopSeconds: "0",
-	delaySeconds: 1
+	delaySeconds: 1,
+    _template_exclude: []
 };
 
 var gAppInfo = null;
@@ -41,6 +42,13 @@ function SaveSettingsAndNotifyHostApp()
 {
 	save_settings();
 	push_settings_to_renderer();
+}
+
+// called by Gameshow to retrieve settings.
+// settings can be any javascript object, which Gameshow will serialize as JSON
+// and save in document so it can persist between application sessions
+function GetWidgetSettings() {
+    return gWidgetSettings;
 }
 
 // This will be called by the host app *Gameshow* to restore setting values.
