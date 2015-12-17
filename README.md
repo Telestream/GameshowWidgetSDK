@@ -8,7 +8,7 @@
 
 *Gameshow* will load widget plug-ins from the following locations on Macs:
 - `Gameshow.app/Contents/PlugIns/Sources/WidgetSDK` for built-in widgets that ship with *Gameshow*.
-- `/Library/Application Support/Gameshow/WidgetSDK` for user installed third party widgets.
+- `~/Library/Application Support/Gameshow/WidgetSDK` for user installed third party widgets.
 
 ## Widget plug-in folder anatomy
 Below is an example of a typical folder layout for a widget plug-in.
@@ -41,6 +41,7 @@ Gameshow expects to find the plug-in manifest inside the plug-in folder, and it 
 		settings_page="countdown-settings.html"
 		start_page="countdown.html"
 		settings_height="200"
+		provides_renderer_geometry="false"
 		api_version="1">
 </widget>
 ```
@@ -54,8 +55,8 @@ Gameshow expects to find the plug-in manifest inside the plug-in folder, and it 
 * `min_width` and `min_height` attributes specify the minimum resolution of the rendering component.  Default value is `640` for `min_width` and `480` for `min_height`.
 * `settings_page` is an optional attribute that specifies the widget settings component.  This part of the widget is presented to the user in the *Shot Properties Inspector* / *Source Settings* page.  Whether the widget requires any configuration settings is entirely up to the widget authors.  Default value is `settings.html`.
 * `settings_height` is an optional attribute that specifies the suggested minimum height of the Gameshow container widget used to host the plug-in settings UI.  Default value is `480`.  The widget may change its height requirements dynamically via `_runtime` parameter as discussed in *Interaction between widget plug-in and Gameshow*.
+* `provides_renderer_geometry` is an optional attribute indicating whether widget rendering component can calculate its own size, allowing renderer `width` and `height` to be unconstrained in *Gameshow* and to change dynamically at runtime.  This is discussed in more detail in *Interaction between widget plug-in and Gameshow*.
 * `api_version` attribute specifies the version of the host API.  This is required and should always be set to `1`.
-* `api_version` attribute specifies the version of the host API.  This is required and should always be set to 1.
 
 While some of the plug-in folder layout is specified in the manifest, the settings UI and widget rendering components may reference additional files.  In the example given here `countdown-settings.html` references two other files included in the plug-in folder, as shown below.
 ```
@@ -111,6 +112,21 @@ if (window.hostApp) {
 
 *Gameshow* will call `SetWidgetSettings(settings, applicationInfo)` for both the settings component and the rendering component.  For the settings component it is called to (re)initialize the settings UI with the previously saved values.  For the rendering component it is called to pass widget settings to the rendering component.
 
+*Gameshow* will call `GetWidgetSettings()` for the rendering component, and may call it for the settings component.  For the rendering component it will be called when exporting a document template.  Document templates should not include any sensitive widget settings (passwords, access keys, fragile URLs, etc...) -- these should be listed in `settings._template_exclude` array.  Below is a listing of a sample settings object that contains a couple of settings (`text_filepath`, and `_private.access_key`) that should not be part of the exported template.
+```
+{
+  "text_source": "FILE",
+  "text": "dGhpcyVDMiVBMGlzJUMyJUEwKG5vdCVDMiVBMGxpdmUpJUMyJUEwdGV4dCUyQyVDMiVBMG9uZSVDMiVBMGxpbmVyJTBBJTBBJTBBNHRoJUMyJUEwbGluZSUwQQ==",
+  "text_filepath": "file:///Some/Non/Portable/Path/To/current-date-time.txt",
+  "_private": { "access_key": "SomeSecretKey" },
+  "_template_exclude": [
+    "text_filepath",
+    "_private.access_key"
+  ]
+}
+```
+Note that if `settings._template_exclude` is omitted then none of the widget settings will be included in the exported template.  Similarly, if `settings._template_exclude` is present and its value is an empty array (`settings._template_exclude = [];`) then all of the widget settings will be included in the exported template.
+
 *Gameshow* will supply OAuth access tokens for Twitch or YouTube (depending on which service the user is logged in to) in the `applicationInfo` parameter passed to `SetWidgetSettings(settings, applicationInfo)`.  Below is a listing of a sample value of `applicationInfo`.
 ```
 {
@@ -118,6 +134,68 @@ if (window.hostApp) {
   "oauth_access_token": "some_auth_token"
 }
 ```
+
+### Widgets with content-defined size
+*Gameshow* can accommodate plug-in widgets with an implicitly defined width and height.  An example of this would be a text rendering widget where the size of the rendering component depends on the font settings, the text being rendered, whether the width of the rendering component is unconstrained or fixed, and whether line wrapping is enabled.  A widget can indicate to *Gameshow* that it can calculate the size of its rendering component by adding `provides_renderer_geometry="true"` to `description.xml`.  A widget that supports implicit sizing will need to examine `settings._renderer` record to see how its geometry has been constrained (`width_constrained`, `height_constrained`, `client_width`, `client_height`).  When `width` is constrained the *Gameshow* widget should reference `_renderer.client_width` for the expected renderer width value.  Note that `width_constrained`, `height_constrained`, `client_width` and `client_height` are values supplied by *Gameshow* to inform the widget about the intended layout behavior.  *Gameshow* will ignore these values when it receives widget settings.  The widget is expected to provide its unconstrained implicit `width` and `height` in `_renderer.geometry` record when it submits settings to *Gameshow*.  Also required is `_renderer.constrained_width_geometry` which should provide the `height` of the renderer component required to accommodate (possibly line-wrapped) content within the `_renderer.client_width` constraint.  Below is an excerpt of the `settings._renderer` record for the Text widget that ships with *Gameshow*.
+```
+{
+  "_renderer": {
+    "width_constrained": false,
+    "height_constrained": false,
+    "client_width": 1920,
+    "client_height": 1080,
+    "geometry": {
+      "width": 1731,
+      "height": 672
+    },
+    "constrained_width_geometry": {
+      "width": 1731,
+      "height": 672
+    }
+  }
+}
+```
+
+#### File selection from a widget plug-in
+*Gameshow* hostApp API allows plug-ins to prompt the user for file selection and to receive the selection result as a list of `file://` URLs.  Below is an example of single-file selection of arbitrary files:
+```
+	obj.selectTextSourceFile = function () {
+		if (window.hostApp)	{
+			var options = { allowsMultipleSelection: false };
+			window.hostApp.execute('openFileDialog', JSON.stringify(options));
+		}
+	};
+```
+
+Selection result is delivered via a call to `hostAppCallback(commandName, commandResult)`, where `commandName` is set to `'receiveSelectedFileURLs'` and `commandResult` includes stringified JSON array of selected file URLs.
+```
+	obj.hostAppCallbackHandlers = {
+		receiveSelectedFileURLs: function (commandResult) {
+			var files = JSON.parse(commandResult);
+			if (files.length > 0) {
+				var settings = obj.currentSettings();
+				settings.text_filepath = files[0];
+			}
+		}
+	};
+
+    /* . . . */
+
+function hostAppCallback(commandName, commandResult) {
+	var ws = WidgetSettingsSingleton();
+	var callbackHandler = ws.hostAppCallbackHandlers[commandName];
+	if (callbackHandler) {
+	    callbackHandler(commandResult);
+	}
+}
+```
+
+Note that *Gameshow* hostApp `openFileDialog` command supports several configuration options:
+- `allowsMultipleSelection` option can be set to `true` or `false`.
+- `initialDirectory` option can be set to `'AUDIO'`, `'IMAGE'`, `'VIDEO'`, `'HOME'`, `'DESKTOP'`, `'file://Some/File/Path...'`.
+- `fileTypeClass` option can be set to `'AUDIO_FILETYPE'`, `'IMAGE_FILETYPE'`, `'VIDEO_FILETYPE'`, `'MEDIA_FILETYPE'`.  `'MEDIA_FILETYPE'` implies selection of audio, video, and image files. 
+- `fileTypes` option can be used to specify a list of eligible file extensions, for example `'.jpg;.png'`.  Note that `fileTypeClass` and `fileTypes` are mutually exclusive.
+
 
 ## Plug-in widget look and feel within Gameshow
 *Gameshow* tries to maintain a consistent look and feel between plug-in widget settings controls and the rest of the *Gameshow* UI.  This is accomplished by injecting a stylesheet into the embedded browser instance hosting the widget settings component, and the rendering component.  The CSS injected into the settings component instance is different depending on the area of the UI where the widget settings are being presented -- the *Shot Properties Inspector* panel uses dark backgrounds and is more customized, while the *Source Settings* dialog maintains native look and feel.
